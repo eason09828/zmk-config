@@ -1,0 +1,7 @@
+file_format: "1"
+id: macropad6
+name: Macropad6
+type: shield
+features:
+  - keys
+  - encoder
