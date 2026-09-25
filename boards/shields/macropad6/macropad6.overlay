@@ -70,7 +70,14 @@
         compatible = "alps,ec11";
         a-gpios = <&gpio1 15 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;  /* 115 -> 旋钮1 A */
         b-gpios = <&gpio0 2 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;   /* 002 -> 旋钮1 B */
-        steps = <80>;
+        /* steps = 转一圈的电平边沿总数（不是格数！）。
+         * 官方 shield 都写 80，那是「每格 4 个边沿」的常见 EC11 的值。
+         * 实测这两颗是「每格 2 个边沿」→ 一圈 20 格 × 2 = 40。
+         * 若按 80 写：每格只累到 360/80×2 = 9°，而触发阈值是
+         * 360 / triggers-per-rotation = 360/20 = 18°，
+         * 结果必须转满 2 格才会触发 1 次 —— 这正是「转一格没反应」的原因。
+         * 改成 40 后每格 = 360/40×2 = 18°，正好一格触发一次。 */
+        steps = <40>;
         status = "okay";
     };
 
@@ -78,7 +85,9 @@
         compatible = "alps,ec11";
         a-gpios = <&gpio0 29 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;  /* 029 -> 旋钮2 A */
         b-gpios = <&gpio0 31 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;  /* 031 -> 旋钮2 B */
-        steps = <80>;
+        /* 与旋钮 1 同理：每格 2 个边沿 → 一圈 40。写成 80 就会「转两格才动一次」。
+         * 若刷完发现转 1 格反而跳 2 次，说明这颗其实是每格 4 边沿，改回 80 即可。 */
+        steps = <40>;
         status = "okay";
     };
 
