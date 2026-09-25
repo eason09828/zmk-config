@@ -5,17 +5,23 @@
  *   上排: 播放/暂停 | 上一曲 | 下一曲
  *   下排: 静音     | 截图   | 锁屏
  *
- * 旋钮 1: 音量加 / 音量减
- * 旋钮 2: 向下翻页 / 向上翻页
+ * 旋钮 1: 顺时针 = 音量加 / 逆时针 = 音量减
+ * 旋钮 2: 顺时针 = 向下滚 / 逆时针 = 向上滚（鼠标滚轮，任何 App 都能滚）
  *
  * 改键有两种方式：
  *   1. 网页实时改（推荐）：USB 连 Mac → Chrome 打开 https://zmk.studio
  *      → 先按住 键1 + 键3 解锁 → 拖拽改键，即时生效、不用重新编译。
+ *      注意：ZMK Studio 目前改不了旋钮，旋钮只能改本文件后重新编译。
  *   2. 改这个文件后重新编译刷入。
  */
 
+/* 滚动手感旋钮：转一格滚多少。想更细腻改小（比如 6），想更快改大（比如 15）。
+ * 必须在 include 之前定义 —— 它覆盖 ZMK 的默认值 10。 */
+#define ZMK_POINTING_DEFAULT_SCRL_VAL 10
+
 #include <behaviors.dtsi>
 #include <dt-bindings/zmk/keys.h>
+#include <dt-bindings/zmk/mouse.h>
 
 / {
     keymap {
@@ -27,7 +33,22 @@
                 &kp C_MUTE         &kp LG(LS(NUMBER_4))     &kp LG(LC(Q))
             >;
             sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN>,
-                              <&inc_dec_kp PG_DN PG_UP>;
+                              <&inc_dec_scr SCRL_DOWN SCRL_UP>;
+        };
+    };
+
+    /*
+     * 让旋钮能驱动鼠标滚轮。
+     * 官方自带的 &inc_dec_kp 只能发键盘按键，滚轮要用鼠标行为 &msc，
+     * 所以这里照抄它的结构、把里面的 &kp 换成 &msc，做成一个
+     * 「顺时针触发参数1、逆时针触发参数2」的传感器行为。
+     * 手感调节：滚太快/太慢，改本文件顶部的 ZMK_POINTING_DEFAULT_SCRL_VAL。
+     */
+    behaviors {
+        inc_dec_scr: inc_dec_scr {
+            compatible = "zmk,behavior-sensor-rotate-var";
+            #sensor-binding-cells = <2>;
+            bindings = <&msc>, <&msc>;
         };
     };
 
