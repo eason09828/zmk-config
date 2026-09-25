@@ -4,3 +4,9 @@ include:
     shield: macropad6
     snippet: studio-rpc-usb-uart
     cmake-args: -DCONFIG_ZMK_STUDIO=y
+
+  # 「清空设置」固件（一次性工具，平时不用刷）：
+  # 刷一次它 = 把键盘里存的东西全清掉 —— 旧蓝牙配对、ZMK Studio 改过的键位、输出端点选择。
+  # 遇到「Mac 看得到键盘但连不上」「改了 keymap 却不起作用」时刷它，然后再刷正常固件。
+  - board: nice_nano_v2
+    shield: settings_reset
