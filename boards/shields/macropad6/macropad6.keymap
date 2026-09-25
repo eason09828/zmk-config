@@ -15,9 +15,14 @@
  *   2. 改这个文件后重新编译刷入。
  */
 
-/* 滚动手感旋钮：转一格滚多少。想更细腻改小（比如 6），想更快改大（比如 15）。
- * 必须在 include 之前定义 —— 它覆盖 ZMK 的默认值 10。 */
-#define ZMK_POINTING_DEFAULT_SCRL_VAL 10
+/* 滚轮速度：数值越大，转一格滚得越快。
+ *
+ * 数值含义 = 「每秒滚动多少格」。ZMK 的滚轮行为每 16ms 发一次事件，
+ * 所以每次实际滚动的格数 ≈ 本数值 × 0.016。
+ *   10  → 每次 0.16 格 → 取整后是 0 → 等于什么都不滚（这就是之前失效的原因之一）
+ *   200 → 每次 3.2 格 → 取整 3 格，手感接近真鼠标的一格滚轮
+ * 必须在 include 之前定义，否则不生效。 */
+#define ZMK_POINTING_DEFAULT_SCRL_VAL 200
 
 #include <behaviors.dtsi>
 #include <dt-bindings/zmk/keys.h>
@@ -27,28 +32,50 @@
     keymap {
         compatible = "zmk,keymap";
 
+        /* ===== 第 0 层：日常使用 =====
+         * 注意下排最左那颗是「轻按=静音，长按=进入调试层」 */
         default_layer {
             bindings = <
                 &kp C_PLAY_PAUSE   &kp C_PREV               &kp C_NEXT
-                &kp C_MUTE         &kp LG(LS(NUMBER_4))     &kp LG(LC(Q))
+                &lt 1 C_MUTE       &kp LG(LS(NUMBER_4))     &kp LG(LC(Q))
             >;
             sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN>,
                               <&inc_dec_scr SCRL_DOWN SCRL_UP>;
+        };
+
+        /* ===== 第 1 层：调试层（长按「静音」键期间生效）=====
+         * 这层里旋钮 2 改成发键盘字母 a / b，用来判断旋钮 2 的硬件到底有没有信号：
+         * 长按静音键 + 转旋钮 2，如果能在能打字的地方打出 a / b，
+         * 说明编码器和接线完全正常，问题只可能在固件。
+         * 平时用不到这一层，长按键 4 才会进去。 */
+        debug_layer {
+            bindings = <
+                &trans &trans &trans
+                &trans &trans &trans
+            >;
+            sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN>,
+                              <&inc_dec_kp A B>;
         };
     };
 
     /*
      * 让旋钮能驱动鼠标滚轮。
      * 官方自带的 &inc_dec_kp 只能发键盘按键，滚轮要用鼠标行为 &msc，
-     * 所以这里照抄它的结构、把里面的 &kp 换成 &msc，做成一个
+     * 所以照抄它的结构、把里面的 &kp 换成 &msc，做成一个
      * 「顺时针触发参数1、逆时针触发参数2」的传感器行为。
-     * 手感调节：滚太快/太慢，改本文件顶部的 ZMK_POINTING_DEFAULT_SCRL_VAL。
      */
     behaviors {
         inc_dec_scr: inc_dec_scr {
             compatible = "zmk,behavior-sensor-rotate-var";
             #sensor-binding-cells = <2>;
             bindings = <&msc>, <&msc>;
+
+            /* ！！！这个参数是旋钮能不能滚的关键！！！
+             * &msc 每 16ms 才发一次滚轮事件，而 tap-ms 是「子行为按住多久」。
+             * 默认 5ms —— 5ms 内就松开了，滚轮事件一次都发不出来，转旋钮毫无反应。
+             * 必须设成 > 16ms，才能让第一次（也是唯一一次）滚轮事件发出去。
+             * 25ms 既保证发得出去，又不会被误判成「按住不放」。 */
+            tap-ms = <25>;
         };
     };
 
