@@ -1,16 +1,6 @@
-# 编译矩阵：Actions 会自动按这里的每一项各编译一份固件
+# 编译矩阵：Actions 会按这里的每一项各编译一份固件
 include:
-  # ① 我们的键盘（主产物）
   - board: nice_nano_v2
     shield: macropad6
     snippet: studio-rpc-usb-uart
     cmake-args: -DCONFIG_ZMK_STUDIO=y
-
-  # ② 对照组：官方自带键盘。
-  #    如果 ① 挂了而 ② 成功，说明问题只在我们的 shield 文件里；
-  #    如果两个都挂，说明是模板/环境层面的问题。
-  - board: nice_nano_v2
-    shield: corne_left
-    snippet: studio-rpc-usb-uart
-    cmake-args: -DCONFIG_ZMK_STUDIO=y
-    artifact-name: CONTROL-official-corne_left
